@@ -247,8 +247,12 @@ void ExternalNotificationModule::setExternalState(uint8_t index, bool on)
 #ifdef UNPHONE
         unphone.vibe(on); // the unPhone's vibration motor is on a i2c GPIO expander
 #endif
-        if (moduleConfig.external_notification.output_vibra)
-            digitalWrite(moduleConfig.external_notification.output_vibra, on);
+        if (moduleConfig.external_notification.output_vibra) {
+            if (on)
+                tone(moduleConfig.external_notification.output_vibra, 140, 0);
+            else
+                noTone(moduleConfig.external_notification.output_vibra);
+        }
         break;
     case 2:
         // Only control buzzer pin digitally if not using PWM mode
@@ -391,7 +395,7 @@ ExternalNotificationModule::ExternalNotificationModule()
         externalTurnedOn[0] = 0;
         if (moduleConfig.external_notification.output_vibra) {
             LOG_INFO("Use Pin %i for vibra motor", moduleConfig.external_notification.output_vibra);
-            pinMode(moduleConfig.external_notification.output_vibra, OUTPUT);
+//            pinMode(moduleConfig.external_notification.output_vibra, OUTPUT);
             setExternalState(1, false);
             externalTurnedOn[1] = 0;
         }
