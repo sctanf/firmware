@@ -23,6 +23,9 @@ class PowerStatus : public Status
     OptionalBool hasBattery = OptUnknown;
     /// Battery voltage in mV, valid if haveBattery is true
     int batteryVoltageMv = 0;
+    int voutMv = 0;
+    int batteryIchg = 0;
+    int batteryIdsg = 0;
     /// Battery charge percentage, either read directly or estimated
     int8_t batteryChargePercent = 0;
     /// Whether USB is connected
@@ -33,7 +36,7 @@ class PowerStatus : public Status
   public:
     PowerStatus() { statusType = STATUS_TYPE_POWER; }
     PowerStatus(OptionalBool hasBattery, OptionalBool hasUSB, OptionalBool isCharging, int batteryVoltageMv = -1,
-                int8_t batteryChargePercent = 0)
+                int8_t batteryChargePercent = 0, int voutMv = 0, int batteryIchg = 0, int batteryIdsg = 0)
         : Status()
     {
         this->hasBattery = hasBattery;
@@ -41,6 +44,9 @@ class PowerStatus : public Status
         this->isCharging = isCharging;
         this->batteryVoltageMv = batteryVoltageMv;
         this->batteryChargePercent = batteryChargePercent;
+        this->voutMv = voutMv;
+        this->batteryIchg = batteryIchg;
+        this->batteryIdsg = batteryIdsg;
     }
     PowerStatus(const PowerStatus &);
     PowerStatus &operator=(const PowerStatus &);
@@ -57,6 +63,10 @@ class PowerStatus : public Status
     bool getIsCharging() const { return isCharging == OptTrue; }
 
     int getBatteryVoltageMv() const { return batteryVoltageMv; }
+
+    int getVoutMv() const { return voutMv; }
+    int getBatteryIchg() const { return batteryIchg; }
+    int getBatteryIdsg() const { return batteryIdsg; }
 
     /**
      * Note: for boards with battery pin or PMU, 0% battery means 'unknown/this board doesn't have a battery installed'
@@ -75,7 +85,9 @@ class PowerStatus : public Status
     bool matches(const PowerStatus *newStatus) const
     {
         return (newStatus->getHasBattery() != hasBattery || newStatus->getHasUSB() != hasUSB ||
-                newStatus->getBatteryVoltageMv() != batteryVoltageMv);
+                newStatus->getBatteryVoltageMv() != batteryVoltageMv || newStatus->getBatteryChargePercent() != batteryChargePercent ||
+                newStatus->getVoutMv() != voutMv ||
+                newStatus->getBatteryIchg() != batteryIchg || newStatus->getBatteryIdsg() != batteryIdsg);
     }
     int updateStatus(const PowerStatus *newStatus)
     {
@@ -87,6 +99,9 @@ class PowerStatus : public Status
             hasBattery = newStatus->hasBattery;
             batteryVoltageMv = newStatus->getBatteryVoltageMv();
             batteryChargePercent = newStatus->getBatteryChargePercent();
+            voutMv = newStatus->getVoutMv();
+            batteryIchg = newStatus->getBatteryIchg();
+            batteryIdsg = newStatus->getBatteryIdsg();
             hasUSB = newStatus->hasUSB;
             isCharging = newStatus->isCharging;
         }

@@ -71,24 +71,28 @@ void playLongBeep()
 
 void playGPSEnableBeep()
 {
+    tone(moduleConfig.external_notification.output_vibra, 140, 500); // also vibrate
     ToneDuration melody[] = {{NOTE_C3, DURATION_1_8}, {NOTE_FS3, DURATION_1_4}, {NOTE_CS4, DURATION_1_4}};
     playTones(melody, sizeof(melody) / sizeof(ToneDuration));
 }
 
 void playGPSDisableBeep()
 {
+    tone(moduleConfig.external_notification.output_vibra, 140, 500); // also vibrate
     ToneDuration melody[] = {{NOTE_CS4, DURATION_1_8}, {NOTE_FS3, DURATION_1_4}, {NOTE_C3, DURATION_1_4}};
     playTones(melody, sizeof(melody) / sizeof(ToneDuration));
 }
 
 void playStartMelody()
 {
+    tone(moduleConfig.external_notification.output_vibra, 140, 500); // also vibrate
     ToneDuration melody[] = {{NOTE_FS3, DURATION_1_8}, {NOTE_AS3, DURATION_1_8}, {NOTE_CS4, DURATION_1_4}};
     playTones(melody, sizeof(melody) / sizeof(ToneDuration));
 }
 
 void playShutdownMelody()
 {
+    tone(moduleConfig.external_notification.output_vibra, 140, 500);
     ToneDuration melody[] = {{NOTE_CS4, DURATION_1_8}, {NOTE_AS3, DURATION_1_8}, {NOTE_FS3, DURATION_1_4}};
     playTones(melody, sizeof(melody) / sizeof(ToneDuration));
 }

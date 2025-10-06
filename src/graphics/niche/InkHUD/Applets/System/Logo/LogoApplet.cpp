@@ -33,8 +33,8 @@ InkHUD::LogoApplet::LogoApplet() : concurrency::OSThread("LogoApplet")
 void InkHUD::LogoApplet::onRender()
 {
     // Size  of the region which the logo should "scale to fit"
-    uint16_t logoWLimit = X(0.8);
-    uint16_t logoHLimit = Y(0.5);
+    uint16_t logoWLimit = X(0.7);
+    uint16_t logoHLimit = Y(0.3);
 
     // Get the max width and height we can manage within the region, while still maintaining aspect ratio
     uint16_t logoW = getLogoWidth(logoWLimit, logoHLimit);
@@ -42,7 +42,7 @@ void InkHUD::LogoApplet::onRender()
 
     // Where to place the center of the logo
     int16_t logoCX = X(0.5);
-    int16_t logoCY = Y(0.5 - 0.05);
+    int16_t logoCY = Y(0.55);
 
     // Invert colors if black-on-white
     // Used during shutdown, to resport display health
@@ -57,7 +57,7 @@ void InkHUD::LogoApplet::onRender()
     // Only show the custom screen at startup
     // This allows us to draw the usual Meshtastic logo at shutdown
     // The effect is similar to the two-stage userPrefs boot screen used by BaseUI
-    if (millis() < 10 * 1000UL) {
+//    if (millis() < 10 * 1000UL) {
 
         // Draw the custom logo
         const uint8_t logo[] = USERPREFS_OEM_IMAGE_DATA;
@@ -69,24 +69,13 @@ void InkHUD::LogoApplet::onRender()
                     inverted ? WHITE : BLACK                   // Color
         );
 
-        // Select the largest font which will still comfortably fit the custom text
-        setFont(fontLarge);
-        if (getTextWidth(USERPREFS_OEM_TEXT) > 0.8 * width())
-            setFont(fontMedium);
-        if (getTextWidth(USERPREFS_OEM_TEXT) > 0.8 * width())
-            setFont(fontSmall);
-
-        // Draw custom text below logo
-        int16_t logoB = logoCY + (USERPREFS_OEM_IMAGE_HEIGHT / 2); // Bottom of the logo
-        printAt(X(0.5), logoB + Y(0.1), USERPREFS_OEM_TEXT, CENTER, TOP);
-
         // Don't draw the normal boot screen, we've already drawn our custom version
-        return;
-    }
+//        return;
+//    }
 
 #endif
 
-    drawLogo(logoCX, logoCY, logoW, logoH, inverted ? WHITE : BLACK);
+    drawLogo(logoCX, Y(0.35), logoW, logoH, inverted ? WHITE : BLACK);
 
     if (!textLeft.empty()) {
         setFont(fontSmall);
@@ -101,7 +90,7 @@ void InkHUD::LogoApplet::onRender()
     if (!textTitle.empty()) {
         int16_t logoB = logoCY + (logoH / 2); // Bottom of the logo
         setFont(fontTitle);
-        printAt(X(0.5), logoB + Y(0.1), textTitle, CENTER, TOP);
+        printAt(X(0.5), Y(0.65), textTitle, CENTER, TOP);
     }
 }
 
