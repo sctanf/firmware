@@ -706,31 +706,55 @@ void InkHUD::MenuApplet::drawSystemInfoPanel(int16_t left, int16_t top, uint16_t
 
     // Info blocks, left to right
 
+    // Percentage
     // Voltage
+    float batteryPct = powerStatus->getBatteryChargePercent();
+    char pctStr[4]; // "XX%"
+    sprintf(pctStr, "%2.f%%", batteryPct);
     float voltage = powerStatus->getBatteryVoltageMv() / 1000.0;
     char voltageStr[6]; // "XX.XV"
     sprintf(voltageStr, "%.1fV", voltage);
-    printAt(colC[0], labelT, "Bat", CENTER, TOP);
-    printAt(colC[0], valT, voltageStr, CENTER, TOP);
+    printAt(colC[1], valT, pctStr, CENTER, TOP);
+    printAt(colC[0], labelT, voltageStr, CENTER, TOP);
 
     // Divider
     for (int16_t y = valT; y <= divY; y += 3)
         drawPixel(colR[0], y, BLACK);
 
-    // Channel Util
-    char chUtilStr[4]; // "XX%"
-    sprintf(chUtilStr, "%2.f%%", airTime->channelUtilizationPercent());
-    printAt(colC[1], labelT, "Ch", CENTER, TOP);
-    printAt(colC[1], valT, chUtilStr, CENTER, TOP);
+    // Voltage Out
+    // Current In/Out
+    float voltageOut = powerStatus->getVoutMv() / 1000.0;
+    char voltageOutStr[6]; // "XX.XV"
+    sprintf(voltageOutStr, "%.1fV", voltageOut);
+    int ichg = powerStatus->getBatteryIchg();
+    int idsg = powerStatus->getBatteryIdsg();
+    char chOutStr[6]; // "X.XA"
+    if (idsg > 0) {
+        if (idsg < 100) // Less than 100mA
+            sprintf(chOutStr, "-%dmA", idsg);
+        else
+            sprintf(chOutStr, "-%.1fA", idsg / 1000.0);
+    }
+    else {
+        if (ichg < 100) // Less than 100mA
+            sprintf(chOutStr, "%dmA", ichg);
+        else
+            sprintf(chOutStr, "%.1fA", ichg / 1000.0);
+    }
+    printAt(colC[0], valT, voltageOutStr, CENTER, TOP);
+    printAt(colC[1], labelT, chOutStr, CENTER, TOP);
 
     // Divider
     for (int16_t y = valT; y <= divY; y += 3)
         drawPixel(colR[1], y, BLACK);
 
+    // Channel Util
     // Duty Cycle (AirTimeTx)
+    char chUtilStr[4]; // "XX%"
+    sprintf(chUtilStr, "%2.f%%", airTime->channelUtilizationPercent());
     char dutyUtilStr[4]; // "XX%"
     sprintf(dutyUtilStr, "%2.f%%", airTime->utilizationTXPercent());
-    printAt(colC[2], labelT, "Duty", CENTER, TOP);
+    printAt(colC[2], labelT, chUtilStr, CENTER, TOP);
     printAt(colC[2], valT, dutyUtilStr, CENTER, TOP);
 
     /*

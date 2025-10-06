@@ -44,6 +44,8 @@
 
 #endif
 
+#include <Wire.h>
+
 #ifndef DELAY_FOREVER
 #define DELAY_FOREVER portMAX_DELAY
 #endif
@@ -286,6 +288,36 @@ class AnalogBatteryLevel : public HasBatteryLevel
      */
     virtual uint16_t getBattVoltage() override
     {
+
+    TwoWire *w = NULL;
+    w = &Wire;
+
+/*
+NOTICE! This device can only read/write one byte per transaction -_-
+This means no fancy multi-byte reading and parsing in one go.
+*/
+static const byte sw6106_i2c_address = 0x3c;
+
+static const byte adc_vbat_register = 0x14; // Vbat = (0x15 & 0x0f << 8 | 0x14) * 1.2mV
+static const byte adc_vbat_vout_register = 0x15;
+
+static const byte sw6106_registers[] = {adc_vbat_register, adc_vbat_vout_register};
+static const int num_sw6106_registers = sizeof(sw6106_registers) / sizeof(sw6106_registers[0]);
+
+uint8_t r[num_sw6106_registers] = {0};
+
+for (int i = 0; i < num_sw6106_registers; i++) {
+    r[i] = 0;
+    w->beginTransmission(sw6106_i2c_address);
+    w->write((uint8_t)sw6106_registers[i]);
+    w->endTransmission();
+    w->requestFrom((int)sw6106_i2c_address, 1);
+    if (w->available()) {
+        r[i] = w->read();
+    }
+}
+
+        return ((r[1] & 0x0f) << 8 | r[0]) * 1.2f; // mV
 
 #if HAS_TELEMETRY && defined(HAS_RAKPROT) && !defined(HAS_PMU) && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR
         if (hasRAK()) {
@@ -783,14 +815,125 @@ void Power::readPowerStatus()
 {
     int32_t batteryVoltageMv = -1; // Assume unknown
     int8_t batteryChargePercent = -1;
+    int32_t voutMv = -1;
+    int batteryIchg = -1;
+    int batteryIdischg = -1;
     OptionalBool usbPowered = OptUnknown;
     OptionalBool hasBattery = OptUnknown; // These must be static because NRF_APM code doesn't run every time
     OptionalBool isChargingNow = OptUnknown;
 
+    TwoWire *w = NULL;
+    w = &Wire;
+
+/*
+NOTICE! This device can only read/write one byte per transaction -_-
+This means no fancy multi-byte reading and parsing in one go.
+*/
+static const byte sw6106_i2c_address = 0x3c;
+
+static const byte bg_control_register = 0x01;
+
+static const byte system_status_register = 0x11; // 0x10: charging, 0x20: boosting (output enabled)
+
+static const byte boost_dac_register = 0x13; // 0x80: filtered data, Vboost = (5.0 + 0.1 * 0x13 & 0x7f) V
+
+static const byte adc_vbat_register = 0x14; // Vbat = (0x15 & 0x0f << 8 | 0x14) * 1.2mV
+static const byte adc_vbat_vout_register = 0x15; // Vout = (0x15 & 0xf0 << 4 | 0x16) * 4mV
+static const byte adc_vout_register = 0x16;
+
+static const byte adc_ichg_register = 0x17; // Ichg = (0x18 & 0x0f << 8 | 0x17) * 25/7mA
+static const byte adc_ichg_idischg_register = 0x18; // Idischg = (0x18 & 0x0f << 8 | 0x19) * 25/7mA
+static const byte adc_idischg_register = 0x19;
+
+static const byte control_power_register = 0x22;
+
+static const byte charge_percent_register = 0x4f;
+
+static const byte sw6106_registers[] = {
+    bg_control_register,
+    system_status_register,
+    boost_dac_register,
+    adc_vbat_register, adc_vbat_vout_register, adc_vout_register,
+    adc_ichg_register, adc_ichg_idischg_register, adc_idischg_register,
+    control_power_register,
+    charge_percent_register};
+static const int num_sw6106_registers = sizeof(sw6106_registers) / sizeof(sw6106_registers[0]);
+
+#define BG_CONTROL_REG 0
+#define SYSTEM_STATUS_REG 1
+#define BOOST_DAC_REG 2
+#define ADC_VBAT_REG 3
+#define ADC_VBAT_VOUT_REG 4
+#define ADC_VOUT_REG 5
+#define ADC_ICHG_REG 6
+#define ADC_ICHG_IDISCHG_REG 7
+#define ADC_IDISCHG_REG 8
+#define CONTROL_POWER_REG 9
+#define CHARGE_PERCENT_REG 10
+
+uint8_t r[num_sw6106_registers] = {0};
+
+for (int i = 0; i < num_sw6106_registers; i++) {
+    r[i] = 0;
+    w->beginTransmission(sw6106_i2c_address);
+    w->write((uint8_t)sw6106_registers[i]);
+    w->endTransmission();
+    w->requestFrom((int)sw6106_i2c_address, 1);
+    if (w->available()) {
+        r[i] = w->read();
+    }
+}
+
+uint8_t control_power[2] = {0x01, 0x40};
+w->beginTransmission(sw6106_i2c_address);
+w->write(control_power, 2);
+w->endTransmission();
+
+control_power[1] = 0x80;
+w->beginTransmission(sw6106_i2c_address);
+w->write(control_power, 2);
+w->endTransmission();
+
+//control_power[1] = 0x82; // bg force open
+w->beginTransmission(sw6106_i2c_address);
+w->write(control_power, 2);
+w->endTransmission();
+
+control_power[0] = (uint8_t)control_power_register;
+control_power[1] = 0x40;
+w->beginTransmission(sw6106_i2c_address);
+w->write(control_power, 2);
+w->endTransmission();
+
+control_power[1] = 0x80;
+w->beginTransmission(sw6106_i2c_address);
+w->write(control_power, 2);
+w->endTransmission();
+
+control_power[1] = (r[SYSTEM_STATUS_REG] & 0x10) ? 0x80 : 0xa0; // force open boost if charger inactive (keep sw6106 active)
+w->beginTransmission(sw6106_i2c_address);
+w->write(control_power, 2);
+w->endTransmission();
+
+// if usbc plugged, then disable force open boost
+
+    bool charging = r[SYSTEM_STATUS_REG] & 0x10;
+    float boostVoltage = (5.0f + 0.1f * (r[BOOST_DAC_REG] & 0x7f));
+    batteryVoltageMv = ((r[ADC_VBAT_VOUT_REG] & 0x0f) << 8 | r[ADC_VBAT_REG]) * 1.2f; // mV
+    voutMv = ((r[ADC_VBAT_VOUT_REG] & 0xf0) << 4 | r[ADC_VOUT_REG]) * 4; // mV
+    float ichg = ((r[ADC_ICHG_IDISCHG_REG] & 0x0f) << 8 | r[ADC_ICHG_REG]) * 25.0f / 7; // mA
+    float idischg = ((r[ADC_ICHG_IDISCHG_REG] & 0xf0) << 4 | r[ADC_IDISCHG_REG]) * 25.0f / 7; // mA
+    batteryIchg = ichg;
+    batteryIdischg = idischg;
+    batteryChargePercent = r[CHARGE_PERCENT_REG] & 0x7f;
+
+    LOG_DEBUG("sw6106: bg=0x%02x status=0x%02x, vboost=%.1fV, vbat=%dmV, vout=%dmV, ichg=%.1fmA, idischg=%.1fmA, control=0x%02x, pct=%d%%", r[BG_CONTROL_REG], r[SYSTEM_STATUS_REG], boostVoltage, batteryVoltageMv, voutMv, ichg, idischg, r[CONTROL_POWER_REG], batteryChargePercent);
+
+    hasBattery = (batteryChargePercent | (idischg > 0) | (ichg > 0)) ? OptTrue : OptFalse;
+    usbPowered = (voutMv > 0 && (r[SYSTEM_STATUS_REG] & 0x10)) ? OptTrue : OptFalse;
+    isChargingNow = (ichg > 0) ? OptTrue : OptFalse;
+
     if (batteryLevel) {
-        hasBattery = batteryLevel->isBatteryConnect() ? OptTrue : OptFalse;
-        usbPowered = batteryLevel->isVbusIn() ? OptTrue : OptFalse;
-        isChargingNow = batteryLevel->isCharging() ? OptTrue : OptFalse;
         if (hasBattery) {
             batteryVoltageMv = batteryLevel->getBattVoltage();
             // If the AXP192 returns a valid battery percentage, use it
@@ -827,7 +970,7 @@ void Power::readPowerStatus()
 #endif
 
     // Notify any status instances that are observing us
-    const PowerStatus powerStatus2 = PowerStatus(hasBattery, usbPowered, isChargingNow, batteryVoltageMv, batteryChargePercent);
+    const PowerStatus powerStatus2 = PowerStatus(hasBattery, usbPowered, isChargingNow, batteryVoltageMv, batteryChargePercent, voutMv, batteryIchg, batteryIdischg);
     LOG_DEBUG("Battery: usbPower=%d, isCharging=%d, batMv=%d, batPct=%d", powerStatus2.getHasUSB(), powerStatus2.getIsCharging(),
               powerStatus2.getBatteryVoltageMv(), powerStatus2.getBatteryChargePercent());
     newStatus.notifyObservers(&powerStatus2);
@@ -888,7 +1031,7 @@ void Power::readPowerStatus()
     //
 
     if (batteryLevel && powerStatus2.getHasBattery() && !powerStatus2.getHasUSB()) {
-        if (batteryLevel->getBattVoltage() < OCV[NUM_OCV_POINTS - 1]) {
+        if (batteryVoltageMv < 3200) { // wont trigger so dont care, i guess itll just be logged and ignored
             low_voltage_counter++;
             LOG_DEBUG("Low voltage counter: %d/10", low_voltage_counter);
             if (low_voltage_counter > 10) {
@@ -955,7 +1098,7 @@ int32_t Power::runOnce()
     }
 #endif
     // Only read once every 20 seconds once the power status for the app has been initialized
-    return (statusHandler && statusHandler->isInitialized()) ? (1000 * 20) : RUN_SAME;
+    return (statusHandler && statusHandler->isInitialized()) ? (1000 * 1) : RUN_SAME;
 }
 
 /**
