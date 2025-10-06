@@ -50,11 +50,23 @@ NRF52 PRO MICRO PIN ASSIGNMENT
 #define NUM_ANALOG_INPUTS (1)
 #define NUM_ANALOG_OUTPUTS (0)
 
-// Pin 13 enables 3.3V periphery. If the Lora module is on this pin, then it should stay enabled at all times.
-#define PIN_3V3_EN (0 + 13) // P0.13
+#define PIN_SPKR_A (0 + 15)
+#define PIN_SPKR_B (0 + 26)
+#define PIN_SPKR_C (0 + 7)
+#define PIN_SPKR_D (0 + 5)
+#define PIN_HAPTIC_A (0 + 8)
+#define PIN_HAPTIC_B (0 + 6)
+#define PIN_HAPTIC_C (0 + 12)
+#define PIN_HAPTIC_D (0 + 4)
+
+#define PIN_BUZZER PIN_SPKR_A
+#define PIN_VIBRATION PIN_HAPTIC_A
+
+// Ublox M10 115200 baud
+#define GPS_BAUDRATE 115200
 
 // Analog pins
-#define BATTERY_PIN (0 + 31) // P0.31 Battery ADC
+#define BATTERY_PIN (0 + 5) // P0.05 Battery ADC
 #define ADC_CHANNEL ADC1_GPIO4_CHANNEL
 #define ADC_RESOLUTION 14
 #define BATTERY_SENSE_RESOLUTION_BITS 12
@@ -77,14 +89,16 @@ NRF52 PRO MICRO PIN ASSIGNMENT
 #define WIRE_INTERFACES_COUNT 1
 
 #define PIN_WIRE_SDA (32 + 4) // P1.04
-#define PIN_WIRE_SCL (0 + 11) // P0.11
+#define PIN_WIRE_SCL (0 + 13) // P0.13
 
 // LED
-#define PIN_LED1 (0 + 15) // P0.15
+#define PIN_LED1 (0 + 0) // P0.00
 #define LED_BUILTIN PIN_LED1
 // Actually red
 #define LED_BLUE PIN_LED1
 #define LED_STATE_ON 1 // State when LED is lit
+
+#define PIN_EINK_EN (0 + 1)
 
 // Button
 #define BUTTON_PIN (32 + 0) // P1.00
@@ -94,22 +108,23 @@ NRF52 PRO MICRO PIN ASSIGNMENT
 #define PIN_GPS_RX (0 + 20) // P0.20
 
 #define PIN_GPS_EN (0 + 24) // P0.24
+#define GPS_EN_ACTIVE 0
 #define GPS_POWER_TOGGLE
 #define GPS_UBLOX
-// define GPS_DEBUG
+//#define GPS_DEBUG
 
 // UART interfaces
-#define PIN_SERIAL1_RX PIN_GPS_TX
-#define PIN_SERIAL1_TX PIN_GPS_RX
+#define PIN_SERIAL1_RX PIN_GPS_RX
+#define PIN_SERIAL1_TX PIN_GPS_TX
 
-#define PIN_SERIAL2_RX (0 + 6) // P0.06
-#define PIN_SERIAL2_TX (0 + 8) // P0.08
+#define PIN_SERIAL2_RX (0 + 7) // P0.07
+#define PIN_SERIAL2_TX (0 + 12) // P0.12
 
 // Serial interfaces
 #define SPI_INTERFACES_COUNT 1
 
 #define PIN_SPI_MISO (0 + 2)   // P0.02
-#define PIN_SPI_MOSI (32 + 15) // P1.15
+#define PIN_SPI_MOSI (0 + 31) // P0.31
 #define PIN_SPI_SCK (32 + 11)  // P1.11
 
 #define LORA_MISO PIN_SPI_MISO
@@ -118,17 +133,13 @@ NRF52 PRO MICRO PIN ASSIGNMENT
 #define LORA_CS (32 + 13) // P1.13
 
 // LORA MODULES
-#define USE_LLCC68
 #define USE_SX1262
-#define USE_RF95
-#define USE_SX1268
-#define USE_LR1121
 
 // RF95 CONFIG
 
 #define LORA_DIO0 (0 + 29) // P0.29 BUSY
-#define LORA_DIO1 (0 + 10) // P0.10 IRQ
-#define LORA_RESET (0 + 9) // P0.09 NRST
+#define LORA_DIO1 (0 + 28) // P0.28 IRQ
+#define LORA_RESET (0 + 3) // P0.03 NRST
 
 // RX/TX for RFM95/SX127x
 #define RF95_RXEN (0 + 17)    // P0.17
@@ -136,17 +147,17 @@ NRF52 PRO MICRO PIN ASSIGNMENT
 
 // SX126X CONFIG
 #define SX126X_CS (32 + 13)      // P1.13 FIXME - we really should define LORA_CS instead
-#define SX126X_DIO1 (0 + 10)     // P0.10 IRQ
+#define SX126X_DIO1 (0 + 28)     // P0.28 IRQ
 #define SX126X_DIO2_AS_RF_SWITCH // Note for E22 modules: DIO2 is not attached internally to TXEN for automatic TX/RX switching,
                                  // so it needs connecting externally if it is used in this way
 #define SX126X_BUSY (0 + 29)     // P0.29
-#define SX126X_RESET (0 + 9)     // P0.09
+#define SX126X_RESET (0 + 3)     // P0.03
 #define SX126X_RXEN (0 + 17)     // P0.17
 #define SX126X_TXEN RADIOLIB_NC  // Assuming that DIO2 is connected to TXEN pin. If not, TXEN must be connected.
 
 // LR1121
 #ifdef USE_LR1121
-#define LR1121_IRQ_PIN (0 + 10)      // P0.10 IRQ
+#define LR1121_IRQ_PIN (0 + 28)      // P0.28 IRQ
 #define LR1121_NRESET_PIN LORA_RESET // P0.09 NRST
 #define LR1121_BUSY_PIN (0 + 29)     // P0.29 BUSY
 #define LR1121_SPI_NSS_PIN LORA_CS   // P1.13
@@ -183,12 +194,11 @@ settings.
 */
 
 #define SX126X_DIO3_TCXO_VOLTAGE 1.8
-#define TCXO_OPTIONAL // make it so that the firmware can try both TCXO and XTAL
 
 // E-Ink DIY
-#define PIN_EINK_CS (32 + 7)
+#define PIN_EINK_CS (0 + 30)
 #define PIN_EINK_DC (32 + 2)
-#define PIN_EINK_RES (32 + 1)
+#define PIN_EINK_RES (32 + 10)
 #define PIN_EINK_BUSY (32 + 6)
 
 #ifdef __cplusplus

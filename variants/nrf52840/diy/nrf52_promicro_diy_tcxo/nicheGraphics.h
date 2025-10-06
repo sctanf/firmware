@@ -18,16 +18,10 @@
 
 // Shared NicheGraphics components
 // --------------------------------
-#include "graphics/niche/Drivers/EInk/HINK_E0213A289.h"        // WeAct 2.13"
-#include "graphics/niche/Drivers/EInk/HINK_E042A87.h"          // WeAct 4.2"
-#include "graphics/niche/Drivers/EInk/ZJY128296_029EAAMFGN.h"  // WeAct 2.9"
-#include "graphics/niche/Drivers/EInk/ZJY200200_0154DAAMFGN.h" // WeACt 1.54"
+#include "graphics/niche/Drivers/EInk/GDEY0213B74.h"        // 2.13"
 
+#include "graphics/niche/Drivers/Backlight/LatchingBacklight.h"
 #include "graphics/niche/Inputs/TwoButton.h"
-
-#if !defined(INKHUD_BUILDCONF_DRIVER) || !defined(INKHUD_BUILDCONF_DISPLAYRESILIENCE)
-#error If not using a DIY preset, display model and resilience must be set manually
-#endif
 
 void setupNicheGraphics()
 {
@@ -41,7 +35,7 @@ void setupNicheGraphics()
     // -----------------------------
 
     // Use E-Ink driver
-    Drivers::EInk *driver = new Drivers::INKHUD_BUILDCONF_DRIVER;
+    Drivers::EInk *driver = new Drivers::GDEY0213B74;
     driver->begin(&SPI, PIN_EINK_DC, PIN_EINK_CS, PIN_EINK_BUSY, PIN_EINK_RES);
 
     // InkHUD
@@ -53,7 +47,7 @@ void setupNicheGraphics()
     inkhud->setDriver(driver);
 
     // Set how many FAST updates per FULL update.
-    inkhud->setDisplayResilience(INKHUD_BUILDCONF_DISPLAYRESILIENCE); // Suggest roughly ten
+    inkhud->setDisplayResilience(15); // Suggest roughly ten
 
     // Select fonts
     InkHUD::Applet::fontLarge = FREESANS_12PT_WIN1252;
@@ -65,6 +59,12 @@ void setupNicheGraphics()
     inkhud->persistence->settings.rotation = (driver->height > driver->width ? 1 : 0); // Rotate 90deg to landscape, if needed
     inkhud->persistence->settings.userTiles.maxCount = 4;
     inkhud->persistence->settings.optionalFeatures.batteryIcon = true;
+    inkhud->persistence->settings.optionalMenuItems.backlight = true;
+
+    // Setup backlight controller
+    // Note: button is attached further down
+    Drivers::LatchingBacklight *backlight = Drivers::LatchingBacklight::getInstance();
+    backlight->setPin(PIN_EINK_EN);
 
     // Pick applets
     // Note: order of applets determines priority of "auto-show" feature
