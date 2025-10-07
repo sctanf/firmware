@@ -55,6 +55,6 @@
   // "USERPREFS_MQTT_TLS_ENABLED": "false",
   // "USERPREFS_MQTT_ROOT_TOPIC": "event/REPLACEME",
   // "USERPREFS_RINGTONE_NAG_SECS": "60",
-  "USERPREFS_RINGTONE_RTTTL": "24:d=32,o=5,b=565:f6,p,f6,4p,p,f6,p,f6,2p,p,b6,p,b6,p,b6,p,b6,p,b,p,b,p,b,p,b,p,b,p,b,p,b,p,b,1p.,2p.,p",
-  "USERPREFS_TZ_STRING": "tzplaceholder                                         "
+  "USERPREFS_RINGTONE_RTTTL": "Xtransceiver:d=4,o=5,b=600:b,f#,b,2f#6,f#,g#,a#,b,2d#.6,1p,1p,1p",
+  "USERPREFS_TZ_STRING": "CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00                "
 }
