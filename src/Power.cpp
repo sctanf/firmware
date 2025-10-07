@@ -808,11 +808,22 @@ void Power::shutdown()
 #endif
 }
 
+#include "nrf.h"
+
 /// Reads power status to powerStatus singleton.
 //
 // TODO(girts): move this and other axp stuff to power.h/power.cpp.
 void Power::readPowerStatus()
 {
+if ((NRF_PWM2->ENABLE & PWM_ENABLE_ENABLE_Msk) != (PWM_ENABLE_ENABLE_Enabled << PWM_ENABLE_ENABLE_Pos)) {
+  nrf_gpio_pin_set(7);
+  nrf_gpio_pin_set(5);
+}
+if ((NRF_PWM1->ENABLE & PWM_ENABLE_ENABLE_Msk) != (PWM_ENABLE_ENABLE_Enabled << PWM_ENABLE_ENABLE_Pos)) {
+  nrf_gpio_pin_set(12);
+  nrf_gpio_pin_set(4);
+}
+
     int32_t batteryVoltageMv = -1; // Assume unknown
     int8_t batteryChargePercent = -1;
     int32_t voutMv = -1;
