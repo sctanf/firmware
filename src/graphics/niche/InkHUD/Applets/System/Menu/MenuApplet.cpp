@@ -227,6 +227,12 @@ void InkHUD::MenuApplet::execute(MenuItem item)
         // Menu is then sent to background via onShutdown
         break;
 
+    case REBOOT:
+        LOG_INFO("Rebooting from menu");
+        rebootAtMsec = millis();
+        // Menu is then sent to background via onReboot
+        break;
+
     case TOGGLE_BATTERY_ICON:
         inkhud->toggleBatteryIcon();
         break;
@@ -285,7 +291,8 @@ void InkHUD::MenuApplet::showPage(MenuPage page)
         items.push_back(MenuItem("Send", MenuPage::SEND));
         items.push_back(MenuItem("Options", MenuPage::OPTIONS));
         // items.push_back(MenuItem("Display Off", MenuPage::EXIT)); // TODO
-        items.push_back(MenuItem("Save & Shut Down", MenuAction::SHUTDOWN));
+        items.push_back(MenuItem("Shut Down", MenuAction::SHUTDOWN));
+        items.push_back(MenuItem("Reboot", MenuAction::REBOOT));
         items.push_back(MenuItem("Exit", MenuPage::EXIT));
         break;
 
