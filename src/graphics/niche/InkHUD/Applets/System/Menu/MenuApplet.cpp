@@ -692,25 +692,30 @@ void InkHUD::MenuApplet::drawSystemInfoPanel(int16_t left, int16_t top, uint16_t
         setFont(fontSmall);
 
         std::string gpsClockString = getTimeString(gps->p.timestamp + getTZOffset());
-        printAt(width * 0.03, height, gpsClockString, LEFT, TOP);
+        if (width > 0)
+            printAt(width * 0.03, height, gpsClockString, LEFT, TOP);
         char satsStr[16];
         sprintf(satsStr, "%d sats", gps->p.sats_in_view);
-        printAt(width * 0.97, height, satsStr, RIGHT, TOP);
+        if (width > 0)
+            printAt(width * 0.97, height, satsStr, RIGHT, TOP);
         height += fontSmall.lineHeight() * 1.1;
 
         bool has_lock = gps->hasLock();
         if (has_lock) {
             char trkStr[20];
             sprintf(trkStr, "%1.f\xB0 N", gps->p.ground_track);
-            printAt(width * 0.03, height, trkStr, LEFT, TOP);
+            if (width > 0)
+                printAt(width * 0.03, height, trkStr, LEFT, TOP);
             char spdStr[16];
             sprintf(spdStr, "%d kmh", gps->p.ground_speed);
-            printAt(width * 0.97, height, spdStr, RIGHT, TOP);
+            if (width > 0)
+                printAt(width * 0.97, height, spdStr, RIGHT, TOP);
             height += fontSmall.lineHeight() * 1.1;
 
             char altStr[16];
             sprintf(altStr, "%d m MSL", gps->p.altitude);
-            printAt(width * 0.03, height, altStr, LEFT, TOP);
+            if (width > 0)
+                printAt(width * 0.03, height, altStr, LEFT, TOP);
             char accStr[16];
             sprintf(accStr, "\xB1%1.2f m", gps->p.gps_accuracy / 1000.0);
             printAt(width * 0.97, height, accStr, RIGHT, TOP);
@@ -718,12 +723,14 @@ void InkHUD::MenuApplet::drawSystemInfoPanel(int16_t left, int16_t top, uint16_t
 
             char latStr[20];
             sprintf(latStr, "Lat: %.7f", gps->p.latitude_i * 1e-7);
-            printAt(width / 2, height, latStr, CENTER, TOP);
+            if (width > 0)
+                printAt(width / 2, height, latStr, CENTER, TOP);
             height += fontSmall.lineHeight() * 1.1;
 
             char longStr[20];
             sprintf(longStr, "Long: %.7f", gps->p.longitude_i * 1e-7);
-            printAt(width / 2, height, longStr, CENTER, TOP);
+            if (width > 0)
+                printAt(width / 2, height, longStr, CENTER, TOP);
             height += fontSmall.lineHeight() * 1.1;
         }
 
