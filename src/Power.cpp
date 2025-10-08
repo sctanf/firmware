@@ -942,7 +942,7 @@ w->endTransmission();
 
     hasBattery = (batteryChargePercent | (idischg > 0) | (ichg > 0)) ? OptTrue : OptFalse;
     usbPowered = (voutMv > 0 && (r[SYSTEM_STATUS_REG] & 0x10)) ? OptTrue : OptFalse;
-    isChargingNow = (ichg > 0) ? OptTrue : OptFalse;
+    isChargingNow = (ichg > 0 && voutMv > 0 && (r[SYSTEM_STATUS_REG] & 0x10)) ? OptTrue : OptFalse;
 
     if (batteryLevel) {
         if (hasBattery) {
