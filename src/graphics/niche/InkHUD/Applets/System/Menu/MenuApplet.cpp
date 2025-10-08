@@ -43,7 +43,7 @@ InkHUD::MenuApplet::MenuApplet() : concurrency::OSThread("MenuApplet")
 void InkHUD::MenuApplet::onForeground()
 {
     // We do need this before we render, but we can optimize by just calculating it once now
-    systemInfoPanelHeight = getSystemInfoPanelHeight();
+//    systemInfoPanelHeight = getSystemInfoPanelHeight(); // If for some reason the clock (or now gps) appears suddenly, this will not update!
 
     // Display initial menu page
     showPage(MenuPage::ROOT);
@@ -396,6 +396,7 @@ void InkHUD::MenuApplet::onRender()
     // System info panel at the top of the menu
     // =========================================
 
+    systemInfoPanelHeight = getSystemInfoPanelHeight();
     uint16_t &siH = systemInfoPanelHeight;                   // System info - height. Calculated at onForeground
     const uint8_t slotsObscured = ceilf(siH / (float)itemH); // How many slots are obscured by system info panel
 
@@ -677,8 +678,59 @@ void InkHUD::MenuApplet::drawSystemInfoPanel(int16_t left, int16_t top, uint16_t
         setFont(fontMedium);
         printAt(width / 2, top, clockString, CENTER, TOP);
 
-        height += fontMedium.lineHeight();
-        height += fontMedium.lineHeight() * 0.1; // Padding below clock
+        height += fontMedium.lineHeight() * 1.1; // Padding below clock
+
+//        // Horizontal divider
+//        for (int16_t x = 0; x < width; x += 2)
+//            drawPixel(x, height, BLACK);
+//        height += fontSmall.lineHeight() * 0.3;
+    }
+
+    // GPS (maybe)
+    // ===================
+    if (!gps->isPowerSaving()) {
+        setFont(fontSmall);
+
+        std::string gpsClockString = getTimeString(gps->p.timestamp + getTZOffset());
+        printAt(width * 0.03, height, gpsClockString, LEFT, TOP);
+        char satsStr[16];
+        sprintf(satsStr, "%d sats", gps->p.sats_in_view);
+        printAt(width * 0.97, height, satsStr, RIGHT, TOP);
+        height += fontSmall.lineHeight() * 1.1;
+
+        bool has_lock = gps->hasLock();
+        if (has_lock) {
+            char trkStr[20];
+            sprintf(trkStr, "%1.f\xB0 N", gps->p.ground_track);
+            printAt(width * 0.03, height, trkStr, LEFT, TOP);
+            char spdStr[16];
+            sprintf(spdStr, "%d kmh", gps->p.ground_speed);
+            printAt(width * 0.97, height, spdStr, RIGHT, TOP);
+            height += fontSmall.lineHeight() * 1.1;
+
+            char altStr[16];
+            sprintf(altStr, "%d m MSL", gps->p.altitude);
+            printAt(width * 0.03, height, altStr, LEFT, TOP);
+            char accStr[16];
+            sprintf(accStr, "\xB1%1.2f m", gps->p.gps_accuracy / 1000.0);
+            printAt(width * 0.97, height, accStr, RIGHT, TOP);
+            height += fontSmall.lineHeight() * 1.1;
+
+            char latStr[20];
+            sprintf(latStr, "Lat: %.7f", gps->p.latitude_i * 1e-7);
+            printAt(width / 2, height, latStr, CENTER, TOP);
+            height += fontSmall.lineHeight() * 1.1;
+
+            char longStr[20];
+            sprintf(longStr, "Long: %.7f", gps->p.longitude_i * 1e-7);
+            printAt(width / 2, height, longStr, CENTER, TOP);
+            height += fontSmall.lineHeight() * 1.1;
+        }
+
+        // Horizontal divider
+        for (int16_t x = 0; x < width; x += 2)
+            drawPixel(x, height, BLACK);
+        height += fontSmall.lineHeight() * 0.3;
     }
 
     // Stats
@@ -716,11 +768,11 @@ void InkHUD::MenuApplet::drawSystemInfoPanel(int16_t left, int16_t top, uint16_t
     // Percentage
     // Voltage
     float batteryPct = powerStatus->getBatteryChargePercent();
-    char pctStr[4]; // "XX%"
-    sprintf(pctStr, "%2.f%%", batteryPct);
+    char pctStr[10]; // "XXX%"
+    sprintf(pctStr, "%1.f%%", batteryPct);
     float voltage = powerStatus->getBatteryVoltageMv() / 1000.0;
-    char voltageStr[6]; // "XX.XV"
-    sprintf(voltageStr, "%.1fV", voltage);
+    char voltageStr[10]; // "X.XXV"
+    sprintf(voltageStr, "%.2fV", voltage);
     printAt(colC[1], valT, pctStr, CENTER, TOP);
     printAt(colC[0], labelT, voltageStr, CENTER, TOP);
 
@@ -731,21 +783,28 @@ void InkHUD::MenuApplet::drawSystemInfoPanel(int16_t left, int16_t top, uint16_t
     // Voltage Out
     // Current In/Out
     float voltageOut = powerStatus->getVoutMv() / 1000.0;
-    char voltageOutStr[6]; // "XX.XV"
-    sprintf(voltageOutStr, "%.1fV", voltageOut);
+    char voltageOutStr[10];
+    if (voltageOut < 10) // "X.XXV"
+        sprintf(voltageOutStr, "%.2fV", voltageOut);
+    else // "XX.XV"
+        sprintf(voltageOutStr, "%.1fV", voltageOut);
     int ichg = powerStatus->getBatteryIchg();
     int idsg = powerStatus->getBatteryIdsg();
-    char chOutStr[6]; // "X.XA"
+    char chOutStr[10];
     if (idsg > 0) {
-        if (idsg < 100) // Less than 100mA
+        if (idsg < 100) // Less than 100mA "XXmA"
             sprintf(chOutStr, "-%dmA", idsg);
-        else
+        else if (idsg < 1000) // Less than 1000mA "X.XXA"
+            sprintf(chOutStr, "-%.2fA", idsg / 1000.0);
+        else // "XX.XA"
             sprintf(chOutStr, "-%.1fA", idsg / 1000.0);
     }
     else {
-        if (ichg < 100) // Less than 100mA
+        if (ichg < 100) // Less than 100mA "XXmA"
             sprintf(chOutStr, "%dmA", ichg);
-        else
+        else if (ichg < 1000) // Less than 1000mA "X.XXA"
+            sprintf(chOutStr, "%.2fA", ichg / 1000.0);
+        else // "XX.XA"
             sprintf(chOutStr, "%.1fA", ichg / 1000.0);
     }
     printAt(colC[0], valT, voltageOutStr, CENTER, TOP);
@@ -757,10 +816,18 @@ void InkHUD::MenuApplet::drawSystemInfoPanel(int16_t left, int16_t top, uint16_t
 
     // Channel Util
     // Duty Cycle (AirTimeTx)
-    char chUtilStr[4]; // "XX%"
-    sprintf(chUtilStr, "%2.f%%", airTime->channelUtilizationPercent());
-    char dutyUtilStr[4]; // "XX%"
-    sprintf(dutyUtilStr, "%2.f%%", airTime->utilizationTXPercent());
+    float chUtil = airTime->channelUtilizationPercent();
+    char chUtilStr[10]; // "XX%"
+    if (chUtil < 10) // "X.XX%"
+        sprintf(chUtilStr, "%.2f%%", chUtil);
+    else // "XX.X%"
+        sprintf(chUtilStr, "%.1f%%", chUtil);
+    float dutyUtil = airTime->utilizationTXPercent();
+    char dutyUtilStr[10]; // "XX%"
+    if (dutyUtil < 10) // "X.XX%"
+        sprintf(dutyUtilStr, "%.2f%%", dutyUtil);
+    else // "XX.X%"
+        sprintf(dutyUtilStr, "%.1f%%", dutyUtil);
     printAt(colC[2], labelT, chUtilStr, CENTER, TOP);
     printAt(colC[2], valT, dutyUtilStr, CENTER, TOP);
 

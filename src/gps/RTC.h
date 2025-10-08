@@ -46,6 +46,9 @@ RTCSetResult perhapsSetRTC(RTCQuality q, struct tm &t);
 /// Return a string name for the quality
 const char *RtcName(RTCQuality quality);
 
+// get offset
+int32_t getTZOffset();
+
 /// Return time since 1970 in secs.  While quality is RTCQualityNone we will be returning time based at zero
 uint32_t getTime(bool local = false);
 
