@@ -43,7 +43,7 @@ InkHUD::MenuApplet::MenuApplet() : concurrency::OSThread("MenuApplet")
 void InkHUD::MenuApplet::onForeground()
 {
     // We do need this before we render, but we can optimize by just calculating it once now
-//    systemInfoPanelHeight = getSystemInfoPanelHeight(); // If for some reason the clock (or now gps) appears suddenly, this will not update!
+    systemInfoPanelHeight = getSystemInfoPanelHeight(); // If for some reason the clock (or now gps) appears suddenly, this will not update!
 
     // Display initial menu page
     showPage(MenuPage::ROOT);
@@ -396,7 +396,7 @@ void InkHUD::MenuApplet::onRender()
     // System info panel at the top of the menu
     // =========================================
 
-    systemInfoPanelHeight = getSystemInfoPanelHeight();
+//    systemInfoPanelHeight = getSystemInfoPanelHeight();
     uint16_t &siH = systemInfoPanelHeight;                   // System info - height. Calculated at onForeground
     const uint8_t slotsObscured = ceilf(siH / (float)itemH); // How many slots are obscured by system info panel
 
@@ -694,8 +694,8 @@ void InkHUD::MenuApplet::drawSystemInfoPanel(int16_t left, int16_t top, uint16_t
         std::string gpsClockString = getTimeString(gps->p.timestamp + getTZOffset());
         if (width > 0)
             printAt(width * 0.03, height, gpsClockString, LEFT, TOP);
-        char satsStr[16];
-        sprintf(satsStr, "%d sats", gps->p.sats_in_view);
+        char satsStr[20];
+        sprintf(satsStr, "%d satellites", gps->p.sats_in_view);
         if (width > 0)
             printAt(width * 0.97, height, satsStr, RIGHT, TOP);
         height += fontSmall.lineHeight() * 1.1;
@@ -703,7 +703,7 @@ void InkHUD::MenuApplet::drawSystemInfoPanel(int16_t left, int16_t top, uint16_t
         bool has_lock = gps->hasLock();
         if (has_lock) {
             char trkStr[20];
-            sprintf(trkStr, "%1.f\xB0 N", gps->p.ground_track);
+            sprintf(trkStr, "%1.f\xB0 N", gps->p.ground_track / 100000.0);
             if (width > 0)
                 printAt(width * 0.03, height, trkStr, LEFT, TOP);
             char spdStr[16];
@@ -712,13 +712,10 @@ void InkHUD::MenuApplet::drawSystemInfoPanel(int16_t left, int16_t top, uint16_t
                 printAt(width * 0.97, height, spdStr, RIGHT, TOP);
             height += fontSmall.lineHeight() * 1.1;
 
-            char altStr[16];
+            char altStr[20];
             sprintf(altStr, "%d m MSL", gps->p.altitude);
             if (width > 0)
-                printAt(width * 0.03, height, altStr, LEFT, TOP);
-            char accStr[16];
-            sprintf(accStr, "\xB1%1.2f m", gps->p.gps_accuracy / 1000.0);
-            printAt(width * 0.97, height, accStr, RIGHT, TOP);
+                printAt(width / 2, height, altStr, CENTER, TOP);
             height += fontSmall.lineHeight() * 1.1;
 
             char latStr[20];
